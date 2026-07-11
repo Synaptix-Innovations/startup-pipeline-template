@@ -1,5 +1,7 @@
 # Startup Pipeline Template — $0 to revenue
 
+[![CI](https://github.com/Synaptix-Innovations/startup-pipeline-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Synaptix-Innovations/startup-pipeline-template/actions/workflows/ci.yml)
+
 A production-grade delivery pipeline for startups that haven't made money yet.
 CI, gated deploys, health checks, rollback, monitoring, and secrets discipline —
 on free-tier infrastructure, with **zero runtime dependencies** in the template itself.
