@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    name: lint + test + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Zero dependencies — nothing to install. When you add deps: npm ci here.
+
+      - name: Lint (syntax check)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      # A real smoke: boot the app and hit /health. If your app can't answer
+      # a health check in CI, it won't answer one in production either.
+      - name: Smoke (/health)
+        run: |
+          npm start &
+          APP_PID=$!
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:3000/health > /dev/null 2>&1; then
+              echo "health check passed"
+              kill $APP_PID
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "app never became healthy"
+          kill $APP_PID || true
+          exit 1

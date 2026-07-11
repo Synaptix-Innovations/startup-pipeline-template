@@ -1,0 +1,15 @@
+{
+  "name": "startup-pipeline-template",
+  "version": "1.0.0",
+  "description": "A $0-to-revenue delivery pipeline for startups: CI, gated deploys, health checks, rollback, monitoring — on free-tier infrastructure.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "node --check src/server.js && node --check src/server.test.js",
+    "test": "node --test src/",
+    "start": "node src/server.js"
+  }
+}

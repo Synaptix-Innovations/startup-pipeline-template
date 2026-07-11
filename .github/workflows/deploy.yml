@@ -1,0 +1,55 @@
+name: Deploy
+
+# Manual trigger only: a human decides when production changes. Combine with a
+# GitHub "environment" that requires approval for a second pair of eyes.
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: full CI before deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run lint
+      - run: npm test
+
+  deploy:
+    name: deploy + post-deploy health check
+    needs: verify
+    runs-on: ubuntu-latest
+    # Create an environment named "production" in repo settings and add a
+    # required reviewer — that turns this into a true deploy gate.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Pick ONE deploy step and delete the others ──────────────────────
+      #
+      # Option A — Cloudflare Pages (static / frameworks; free tier):
+      # - name: Deploy to Cloudflare Pages
+      #   run: npx wrangler pages deploy ./dist --project-name=$CF_PROJECT
+      #   env:
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     CF_PROJECT: your-project
+      #
+      # Option B — VPS over SSH (see scripts/deploy.sh for the guarded pattern):
+      # - name: Deploy to VPS
+      #   run: |
+      #     echo "${{ secrets.DEPLOY_SSH_KEY }}" > /tmp/key && chmod 600 /tmp/key
+      #     ssh -i /tmp/key -o StrictHostKeyChecking=accept-new "$DEPLOY_USER@$DEPLOY_HOST" \
+      #       'bash /opt/app/scripts/deploy.sh'
+      #   env:
+      #     DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      #     DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      #
+      - name: Deploy (placeholder)
+        run: echo "Wire your deploy step here — see the commented options above."
+
+      # Post-deploy health check — the deploy is not done until production answers.
+      # - name: Verify production health
+      #   run: curl -fsS --retry 10 --retry-delay 3 https://your-app.example.com/health
