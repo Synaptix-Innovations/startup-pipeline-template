@@ -66,6 +66,25 @@ because something actually broke — the incidents are written up in
 None of this needs a paid plan, a cluster, or a vendor. It needs about an hour
 of setup, once.
 
+### Running where it was written
+
+This is not a template we wrote and never used. Every active repository in the
+organisation runs the same shape of gate — the differences are the checks each
+one actually needs:
+
+| Repository | Gate |
+|---|---|
+| synaptix-brain (app) | static + unit + secret scan + build, AI review, path guard, auto-merge |
+| ibkr-bot (trading) | tests + AI review |
+| chat-worker (edge) | install from lockfile + tests + secret scan |
+| knowledge-base (wiki) | internal link check + secret scan |
+| synaptix-infra (config as code) | shellcheck + secret scan + no inline credentials in systemd units |
+
+The wiki checker found a dead link on its first run. The infra scanner flagged a
+connection string on its first run, which turned out to be correct code — and
+that false positive is why it now distinguishes an interpolated variable from a
+literal password. A scanner that cries wolf gets disabled within a week.
+
 ## Quickstart (30 minutes)
 
 1. **Use this template** (button above) → your repo.
