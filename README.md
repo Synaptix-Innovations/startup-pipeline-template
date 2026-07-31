@@ -27,13 +27,44 @@ the middle path:
 
 | Stage | File | What it does |
 |---|---|---|
-| CI | `.github/workflows/ci.yml` | syntax check → tests → real smoke (boots the app, curls `/health`) |
+| CI | `.github/workflows/ci.yml` | syntax check → tests → secret scan → real smoke (boots the app, validates every asset the page references) |
+| Path guard | `.github/workflows/path-guard.yml` | deterministically labels a PR safe / protected by what it touches; unknown paths fail closed |
+| AI review | `.github/workflows/ai-review.yml` | advisory second reviewer; treats the diff as untrusted input; skips quietly with no API key |
+| Auto-merge | `.github/workflows/auto-merge.yml` | arms GitHub's auto-merge only on safe-path ∧ AI-approved ∧ green CI — no model ever merges |
+| Secret scan | `scripts/secret-scan.sh` | fails the build on committed keys or `.env` files |
+| Rollback drill | `scripts/rollback-drill.sh` | deploys a deliberately broken release and proves the rollback fires |
 | Gated deploy | `.github/workflows/deploy.yml` | manual trigger → full CI → deploy step → post-deploy health check |
+| Case studies | `docs/CASE-STUDIES.md` | three real production failures and the check that catches each |
 | Deploy script | `scripts/deploy.sh` | VPS variant: sync → restart → health check → automatic rollback |
 | Monitoring | `scripts/healthcheck.sh` + `docs/MONITORING.md` | cron + Telegram alert; $0 |
 | Secrets | `docs/SECRETS.md` | where secrets live, where they never go, how to rotate |
 | Rollback | `docs/ROLLBACK.md` | the 2-minute playbook, written before you need it |
 | Handover | `docs/HANDOVER.md` | fill-in template documenting the whole setup for the next operator |
+
+## What makes this different from a starter template
+
+Most pipeline boilerplate stops at "lint, test, deploy". Everything below exists
+because something actually broke — the incidents are written up in
+[`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md):
+
+- **The smoke test validates assets, not just `/health`.** A process can answer
+  200 while serving a blank page because the build referenced bundles that were
+  never emitted. `scripts/smoke.sh` fetches the page and requires every `.js`
+  and `.css` it references to return 200.
+- **Path classification is deterministic and fails closed.** A pull request is
+  labelled by what it touches, by code you can read — and a path nobody
+  anticipated is treated as protected, never as safe.
+- **The AI reviewer is advisory and cannot merge.** It applies a label; GitHub
+  merges, and only after the required checks pass. The diff is treated as
+  untrusted input, because a pull request can contain text aimed at the model.
+- **The rollback is drilled, not documented.** `scripts/rollback-drill.sh`
+  deploys a release that cannot pass its health check and asserts that the
+  previous one is restored and serving.
+- **Secrets are scanned on every pull request**, because rotating a key is cheap
+  before it reaches a remote and expensive afterwards.
+
+None of this needs a paid plan, a cluster, or a vendor. It needs about an hour
+of setup, once.
 
 ## Quickstart (30 minutes)
 

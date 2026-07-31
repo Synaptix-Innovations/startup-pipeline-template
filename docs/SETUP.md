@@ -22,6 +22,31 @@ Push to a branch, open a PR — `.github/workflows/ci.yml` runs lint → tests �
 smoke that boots the app and curls `/health`. Make the branch protection rule:
 `main` requires the `lint + test + smoke` check.
 
+## 3b. Turn on the review gate (5 min)
+
+The extra workflows only mean something once GitHub is told to enforce them.
+
+**Branch protection** — Settings → Branches → add a rule for `main`:
+
+- Require a pull request before merging
+- Require status checks: `lint + test + smoke`
+- Require review from Code Owners (pairs with `.github/CODEOWNERS` — edit the
+  handle in that file first)
+
+**Auto-merge** — Settings → General → *Allow auto-merge*. This is what lets
+`auto-merge.yml` hand a pull request to GitHub instead of merging it itself.
+
+**AI review (optional)** — add an `ANTHROPIC_API_KEY` secret. Without it the
+review job skips quietly; nothing goes red.
+
+> ⚠️ **Private repository on the free plan?** Branch protection is not
+> available, and GitHub's auto-merge only turns on when a pull request is
+> blocked by a required check — so with no protection rule there is nothing to
+> wait for and the button never appears. On the free plan you get the CI gate,
+> the path guard and the AI review as advisory signals, and you merge by hand.
+> That is a perfectly good setup; just do not expect the automation to arm
+> itself. Public repositories get branch protection for free.
+
 ## 4. Choose your deploy target (10 min)
 
 **Cloudflare Pages / Workers (static & most frameworks, $0):** uncomment Option A
@@ -44,5 +69,7 @@ downtime from a ping, not from a customer tweet.
 
 - Read [`SECRETS.md`](SECRETS.md) and check nothing sensitive is in the repo.
 - Read [`ROLLBACK.md`](ROLLBACK.md) once now — it's useless discovered during an outage.
+- Run `scripts/rollback-drill.sh` on the server once you have deployed twice. A
+  rollback path that has never been executed is a hope, not a control.
 - Start filling [`HANDOVER.md`](HANDOVER.md) as you configure things. Future-you is
   the first person you'll hand this over to.

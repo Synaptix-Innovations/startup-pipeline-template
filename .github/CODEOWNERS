@@ -1,0 +1,10 @@
+# Everything has an owner; the paths that can break production have a required one.
+#
+# Pair this with branch protection ("Require review from Code Owners") — without
+# that setting the file is documentation, not a control. See docs/SETUP.md.
+
+*                   @your-github-handle
+
+# Anything that decides what runs, who can merge, or how secrets are handled.
+/.github/           @your-github-handle
+/scripts/           @your-github-handle

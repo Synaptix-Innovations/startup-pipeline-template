@@ -1,0 +1,66 @@
+name: Path guard
+
+# Classifies a pull request by WHAT it touches, deterministically — no model
+# involved. Everything downstream (auto-merge, review requirements) keys off
+# these labels, so the decision that matters is made by code you can read.
+#
+# The default is "protected": a path nobody thought about is never safe.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  classify:
+    name: Classify changed paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          echo "Changed files:"; echo "$files" | sed 's/^/  /'
+
+          protected=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              # Anything that can change what runs in production, who can merge,
+              # or how secrets are handled needs a human.
+              .github/*|scripts/*|*Dockerfile*|*docker-compose*|*.tf|*.tfvars) protected=1 ;;
+              # Docs, tests and the app source are safe to automate.
+              docs/*|*.md|src/*|*test*) ;;
+              *) protected=1 ;;   # unknown path: fail closed
+            esac
+          done <<< "$files"
+
+          if [ "$protected" -eq 1 ]; then
+            echo "verdict=protected-path" >> "$GITHUB_OUTPUT"
+          else
+            echo "verdict=safe-path" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          VERDICT: ${{ steps.classify.outputs.verdict }}
+        run: |
+          set -euo pipefail
+          gh label create safe-path --color 0e8a16 --description "Only low-blast-radius paths" 2>/dev/null || true
+          gh label create protected-path --color b60205 --description "Touches CI, scripts or infra" 2>/dev/null || true
+          gh pr edit "$PR" --remove-label safe-path --remove-label protected-path 2>/dev/null || true
+          gh pr edit "$PR" --add-label "$VERDICT"
+          echo "Classified as: $VERDICT"

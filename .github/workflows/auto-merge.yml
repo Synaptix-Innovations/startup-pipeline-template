@@ -1,0 +1,72 @@
+name: Auto-merge
+
+# Turns on GitHub's native auto-merge for a pull request, and only when every
+# condition below holds:
+#
+#   safe-path  ∧  ¬protected-path  ∧  ai-approved  ∧  green CI
+#
+# Two properties are worth stating plainly, because they are what makes this
+# safe rather than clever:
+#
+#   * No model ever merges anything. This job asks GITHUB to merge, and GitHub
+#     only does it after the required checks pass. The AI label is necessary,
+#     never sufficient.
+#   * Every condition is a veto. A missing label, an unknown path, a red check —
+#     any one of them leaves the pull request for a human.
+#
+# REQUIRES branch protection with the CI check marked required. Without it,
+# GitHub has nothing to wait for and auto-merge cannot be enabled — see
+# docs/SETUP.md, including the part about private repositories on the free plan.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  arm:
+    name: Arm auto-merge when everything agrees
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Evaluate the conditions
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          labels="$(gh pr view "$PR" --repo "$REPO" --json labels --jq '.labels[].name')"
+          echo "Labels: $(echo "$labels" | tr '\n' ' ')"
+
+          has() { echo "$labels" | grep -qx "$1"; }
+
+          if has protected-path; then echo "Blocked: touches a protected path."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! has safe-path;    then echo "Blocked: not classified as safe."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! has ai-approved;  then echo "Blocked: no AI approval label.";   echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if has do-not-merge;   then echo "Blocked: do-not-merge is set.";     echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+
+          echo "All conditions met."
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # GitHub still enforces the required checks before it merges. If this
+          # command fails because auto-merge is not allowed on the repository,
+          # that is the setting described in docs/SETUP.md.
+          gh pr merge "$PR" --repo "$REPO" --squash --auto \
+            || echo "Could not enable auto-merge — check repository settings (docs/SETUP.md)."
+
+      - name: Explain why not
+        if: steps.gate.outputs.ok != 'true'
+        run: echo "Auto-merge not armed. A human reviews this one."
