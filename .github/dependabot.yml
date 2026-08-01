@@ -1,0 +1,34 @@
+version: 2
+
+# Pinning actions to a commit SHA stops a compromised tag from reaching us, but
+# a pin that is never updated is just a frozen vulnerability. Dependabot is the
+# other half of that pair: it raises the SHA when a new release lands.
+#
+# Weekly, grouped and capped on purpose — a flood of pull requests gets ignored,
+# and an ignored update is the same as no update. Nothing merges by itself:
+# auto-merge needs branch protection, which the free plan does not offer on
+# private repositories.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One pull request for the safe bumps; majors stay separate because they
+      # deserve a human reading the changelog.
+      npm-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
