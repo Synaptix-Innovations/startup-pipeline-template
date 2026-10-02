@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "lint": "node --check src/server.js && node --check src/server.test.js",
+    "lint": "node --check src/server.js && node --check src/server.test.js && node --check src/workflows.test.js && bash -n scripts/lib/review-failure-reason.sh",
     "test": "node --test src/",
     "start": "node src/server.js"
   }

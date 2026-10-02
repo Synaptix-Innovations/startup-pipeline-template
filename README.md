@@ -29,8 +29,8 @@ the middle path:
 |---|---|---|
 | CI | `.github/workflows/ci.yml` | syntax check → tests → secret scan → real smoke (boots the app, validates every asset the page references) |
 | Path guard | `.github/workflows/path-guard.yml` | deterministically labels a PR safe / protected by what it touches; unknown paths fail closed |
-| AI review | `.github/workflows/ai-review.yml` | advisory second reviewer; treats the diff as untrusted input; skips quietly with no API key |
-| Auto-merge | `.github/workflows/auto-merge.yml` | arms GitHub's auto-merge only on safe-path ∧ AI-approved ∧ green CI — no model ever merges |
+| Review gate | `.github/workflows/codex-review.yml` | Codex reviews every PR (pinned model, Claude fallback); the check conclusion is the verdict; treats the diff as untrusted input; **fails closed** until its secret is set |
+| Auto-merge | `.github/workflows/auto-merge.yml` | arms GitHub's auto-merge only on safe-path ∧ codex-approved ∧ green CI — no model ever merges |
 | Secret scan | `scripts/secret-scan.sh` | fails the build on committed keys or `.env` files |
 | Rollback drill | `scripts/rollback-drill.sh` | deploys a deliberately broken release and proves the rollback fires |
 | Gated deploy | `.github/workflows/deploy.yml` | manual trigger → full CI → deploy step → post-deploy health check |
@@ -54,9 +54,13 @@ because something actually broke — the incidents are written up in
 - **Path classification is deterministic and fails closed.** A pull request is
   labelled by what it touches, by code you can read — and a path nobody
   anticipated is treated as protected, never as safe.
-- **The AI reviewer is advisory and cannot merge.** It applies a label; GitHub
-  merges, and only after the required checks pass. The diff is treated as
-  untrusted input, because a pull request can contain text aimed at the model.
+- **The review gate fails closed and its verdict is the check, not a label.**
+  Codex reviews each pull request and the job exits non-zero on anything but
+  `APPROVE`, so the check run on the head commit is the machine-readable
+  verdict. With no `CODEX_AUTH_JSON` secret the check goes red with a message
+  naming the fix: a gate that skips silently looks the same as one that passed.
+  The diff is treated as untrusted input, because a pull request can contain
+  text aimed at the model. Setup: [`docs/SETUP.md`](docs/SETUP.md) step 3b.
 - **The rollback is drilled, not documented.** `scripts/rollback-drill.sh`
   deploys a release that cannot pass its health check and asserts that the
   previous one is restored and serving.
@@ -74,8 +78,8 @@ one actually needs:
 
 | Repository | Gate |
 |---|---|
-| synaptix-brain (app) | static + unit + secret scan + build, AI review, path guard, auto-merge |
-| ibkr-bot (trading) | tests + AI review |
+| synaptix-brain (app) | static + unit + secret scan + build, Codex review, path guard, auto-merge |
+| ibkr-bot (trading) | tests + Codex review |
 | chat-worker (edge) | install from lockfile + tests + secret scan |
 | knowledge-base (wiki) | internal link check + secret scan |
 | synaptix-infra (config as code) | shellcheck + secret scan + no inline credentials in systemd units |
