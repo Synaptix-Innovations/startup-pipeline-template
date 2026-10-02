@@ -91,6 +91,10 @@ test("auto-merge reads the codex-approved label, which the gate sets", () => {
   assert.match(code, /--add-label codex-approved/);
 });
 
+test("skipped Dependabot/fork PRs are documented as human-merge only", () => {
+  assert.match(read("docs/SETUP.md"), /skipped required check as satisfied/);
+});
+
 test("the secrets are documented and never set by the repository", () => {
   const docs = read("docs/SETUP.md") + read("docs/SECRETS.md");
   for (const s of ["CODEX_AUTH_JSON", "CLAUDE_CODE_OAUTH_TOKEN", "REVIEW_POST_TOKEN"]) {

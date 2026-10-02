@@ -59,7 +59,10 @@ Then add `Codex reviews the PR` to the required status checks above. That check
 is the verdict; the `codex-approved` / `codex-changes-requested` labels are only
 a hint for humans. Dependabot and fork pull requests do not get a review
 (GitHub withholds secrets from them), so the check is absent on those, which
-means "not applicable", not "passed". Edit the repository description in the
+means "not applicable", not "passed". Be aware that GitHub counts a skipped required check as satisfied, so
+such a pull request is not blocked by this gate; it is also never labelled
+`codex-approved`, so `auto-merge.yml` will not arm it. Those pull requests wait
+for a human, which is the intended path. Edit the repository description in the
 workflow's prompt to describe your own project, and pin the model on purpose.
 
 > ⚠️ **Private repository on the free plan?** Branch protection is not
