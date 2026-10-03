@@ -3,7 +3,7 @@ name: Auto-merge
 # Turns on GitHub's native auto-merge for a pull request, and only when every
 # condition below holds:
 #
-#   safe-path  ∧  ¬protected-path  ∧  ai-approved  ∧  green CI
+#   safe-path  ∧  ¬protected-path  ∧  codex-approved  ∧  green CI
 #
 # Two properties are worth stating plainly, because they are what makes this
 # safe rather than clever:
@@ -47,7 +47,7 @@ jobs:
 
           if has protected-path; then echo "Blocked: touches a protected path."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           if ! has safe-path;    then echo "Blocked: not classified as safe."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if ! has ai-approved;  then echo "Blocked: no AI approval label.";   echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! has codex-approved; then echo "Blocked: no codex-approved label.";   echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           if has do-not-merge;   then echo "Blocked: do-not-merge is set.";     echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
 
           echo "All conditions met."

@@ -36,14 +36,40 @@ The extra workflows only mean something once GitHub is told to enforce them.
 **Auto-merge** — Settings → General → *Allow auto-merge*. This is what lets
 `auto-merge.yml` hand a pull request to GitHub instead of merging it itself.
 
-**AI review (optional)** — add an `ANTHROPIC_API_KEY` secret. Without it the
-review job skips quietly; nothing goes red.
+**Codex review (needs one secret)** — `codex-review.yml` is the review gate. It
+is set up to FAIL CLOSED: until `CODEX_AUTH_JSON` exists, every pull request
+gets a red `Codex reviews the PR` check and a comment saying why. That is
+deliberate; a reviewer that skips silently is indistinguishable from one that
+approved. Two ways out, pick one:
+
+1. Add the secrets (you do this yourself; nothing in this repository sets them):
+   - `CODEX_AUTH_JSON` (required): run `codex login` on a machine you trust,
+     then `gh secret set CODEX_AUTH_JSON < ~/.codex/auth.json`.
+   - `CLAUDE_CODE_OAUTH_TOKEN` (optional fallback reviewer, used when Codex is
+     rate-limited or its token expired): `claude setup-token`, then
+     `gh secret set CLAUDE_CODE_OAUTH_TOKEN`.
+   - `REVIEW_POST_TOKEN` (optional): a fine-grained token with Pull requests
+     read/write only, so the review is posted as a COMMENT review from your
+     account instead of a bot comment.
+2. Do not want an AI reviewer? Delete `codex-review.yml` and the
+   `codex-approved` condition in `auto-merge.yml`. Do not leave the workflow in
+   place without the secret.
+
+Then add `Codex reviews the PR` to the required status checks above. That check
+is the verdict; the `codex-approved` / `codex-changes-requested` labels are only
+a hint for humans. Dependabot and fork pull requests do not get a review
+(GitHub withholds secrets from them), so the check is absent on those, which
+means "not applicable", not "passed". Be aware that GitHub counts a skipped required check as satisfied, so
+such a pull request is not blocked by this gate; it is also never labelled
+`codex-approved`, so `auto-merge.yml` will not arm it. Those pull requests wait
+for a human, which is the intended path. Edit the repository description in the
+workflow's prompt to describe your own project, and pin the model on purpose.
 
 > ⚠️ **Private repository on the free plan?** Branch protection is not
 > available, and GitHub's auto-merge only turns on when a pull request is
 > blocked by a required check — so with no protection rule there is nothing to
 > wait for and the button never appears. On the free plan you get the CI gate,
-> the path guard and the AI review as advisory signals, and you merge by hand.
+> the path guard and the Codex review as advisory signals, and you merge by hand.
 > That is a perfectly good setup; just do not expect the automation to arm
 > itself. Public repositories get branch protection for free.
 

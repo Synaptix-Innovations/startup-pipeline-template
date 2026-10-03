@@ -9,6 +9,7 @@ else, ever.**
 | Secret | Lives in | Never in |
 |---|---|---|
 | Deploy keys, API tokens for CI | Repo Settings → Secrets → Actions | workflow YAML, code |
+| `CODEX_AUTH_JSON`, `CLAUDE_CODE_OAUTH_TOKEN`, `REVIEW_POST_TOKEN` (review gate) | Repo Settings → Secrets → Actions, set by the owner | the repo, PR comments, logs |
 | Runtime config (DB URL, API keys) | `/opt/app/.env`, `chmod 600`, owned by the app user | the repo, Docker images, logs |
 | Telegram alert bot token | server `.env` | cron files, scripts |
 
