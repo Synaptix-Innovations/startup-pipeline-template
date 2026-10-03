@@ -121,4 +121,13 @@ next operator exactly where the seams are.
 startup-ready pipelines on free and low-cost infrastructure, then hand them over
 with docs like these. This template is the free, self-serve version of what we do.
 
+## Want it built for you?
+
+If you would rather have this pipeline set up in your accounts and handed over
+than do it yourself, we offer it as a fixed-scope **Startup Pipeline Sprint**
+(typically 10-14 days, no hourly billing). Tell us your stack and your deploy
+target: [info@synaptixtech.net](mailto:info@synaptixtech.net) or
+[synaptixtech.net](https://www.synaptixtech.net). Using the template yourself
+costs nothing and needs no contact.
+
 MIT licensed. Issues and PRs welcome.
