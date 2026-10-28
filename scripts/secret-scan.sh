@@ -57,11 +57,23 @@ while IFS= read -r file; do
   echo "$file" | grep -qE "$ALLOWLIST_REGEX" && continue
   # Skip binaries — grep -I does this for us.
   for pattern in "${PATTERNS[@]}"; do
-    if grep -InaE "$pattern" "$file" > /dev/null 2>&1; then
-      echo "SECRET SCAN: possible credential in $file"
-      grep -InaE "$pattern" "$file" | head -3 | sed 's/^/    /'
-      STATUS=1
-    fi
+    # -e, because the private-key pattern starts with "-": without it grep reads
+    # the pattern as an option and exits 2. Exit 1 is the only "no match"; any
+    # other status means the file was not scanned, and that must not pass.
+    grep_status=0
+    hits="$(grep -InaE -e "$pattern" -- "$file" 2>&1)" || grep_status=$?
+    case "$grep_status" in
+      0)
+        echo "SECRET SCAN: possible credential in $file"
+        printf '%s\n' "$hits" | head -3 | sed 's/^/    /'
+        STATUS=1
+        ;;
+      1) ;;
+      *)
+        echo "SECRET SCAN: could not scan $file (grep exit $grep_status): $hits"
+        STATUS=1
+        ;;
+    esac
   done
 done <<< "$FILES"
 
