@@ -206,8 +206,15 @@ jobs:
               # the pipeline. Same prompt, same verdict contract.
               echo "claude-fallback" > reviewer.txt
               npm install -g @anthropic-ai/claude-code >/dev/null 2>&1 || true
-              # --allowedTools "" => review-only; the untrusted diff cannot run a tool.
-              claude -p --model sonnet --output-format text --allowedTools "" \
+              # The reviewer gets NO tools (Synaptix-Innovations/synaptix-infra#310).
+              # --allowedTools "" only pre-approved tools and removed none: Read/Grep/Glob
+              # still ran on the untrusted diff. --tools "" removes the built-in tools,
+              # --strict-mcp-config every MCP server, and running from an empty directory
+              # keeps the PR's own .claude/settings.json hooks, .mcp.json and CLAUDE.md
+              # from loading.
+              claude_cwd=$(mktemp -d)
+              ( cd "$claude_cwd" && claude -p --model sonnet --output-format text \
+                  --tools "" --strict-mcp-config ) \
                 < prompt.txt > review.txt 2> claude_stderr.log || true
               if ! has_verdict; then
                 # Both reviewers down => fail closed.
