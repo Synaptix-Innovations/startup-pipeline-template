@@ -75,7 +75,9 @@ test("the review post token is only visible to the post step and the model gets 
   assert.equal(uses.length, 1);
   const post = code.slice(code.indexOf("Post review + set label"));
   assert.ok(post.includes("secrets.REVIEW_POST_TOKEN"));
-  assert.match(code, /--allowedTools ""/);
+  // --allowedTools "" only pre-approves tools; it removes none (synaptix-infra#310).
+  assert.match(code, /\( cd "\$claude_cwd" && claude -p [^\n]*\\\n\s+--tools "" --strict-mcp-config \)/);
+  assert.ok(!/claude -p[^\n]*--allowedTools/.test(code), "--allowedTools does not remove tools");
 });
 
 test("every action is pinned to a full commit SHA", () => {
