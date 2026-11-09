@@ -1,4 +1,8 @@
+<img src="https://raw.githubusercontent.com/Synaptix-Innovations/.github/main/profile/banner.svg" alt="Synaptix Innovations" width="720">
+
 # Startup Pipeline Template — $0 to revenue
+
+Part of [Synaptix Innovations](https://github.com/Synaptix-Innovations): a delivery pipeline that runs on free tiers, with a review gate that fails closed.
 
 [![CI](https://github.com/Synaptix-Innovations/startup-pipeline-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Synaptix-Innovations/startup-pipeline-template/actions/workflows/ci.yml)
 
@@ -33,7 +37,7 @@ the middle path:
 | Auto-merge | `.github/workflows/auto-merge.yml` | arms GitHub's auto-merge only on safe-path ∧ codex-approved ∧ green CI — no model ever merges |
 | Secret scan | `scripts/secret-scan.sh` | fails the build on committed keys or `.env` files |
 | Rollback drill | `scripts/rollback-drill.sh` | deploys a deliberately broken release and proves the rollback fires |
-| Gated deploy | `.github/workflows/deploy.yml` | manual trigger → full CI → deploy step → post-deploy health check |
+| Gated deploy | `.github/workflows/deploy.yml` | manual trigger → full CI → your deploy step → post-deploy health check. The deploy step and the health check ship as commented placeholders: you uncomment the one for your target |
 | Case studies | `docs/CASE-STUDIES.md` | three real production failures and the check that catches each |
 | Deploy script | `scripts/deploy.sh` | VPS variant: sync → restart → health check → automatic rollback |
 | Monitoring | `scripts/healthcheck.sh` + `docs/MONITORING.md` | cron + Telegram alert; $0 |
@@ -98,7 +102,11 @@ literal password. A scanner that cries wolf gets disabled within a week.
 5. Pick a deploy target in `.github/workflows/deploy.yml` (Cloudflare Pages example
    included; VPS variant via `scripts/deploy.sh`).
 6. Add the secrets listed in `docs/SECRETS.md` to your repo settings.
-7. Follow `docs/MONITORING.md` (10 minutes) so you learn about downtime from a
+7. Expect your first pull request to be red. The review gate fails closed: the
+   `Codex reviews the PR` check stays red until you add `CODEX_AUTH_JSON`, or
+   delete `codex-review.yml` if you do not want an AI reviewer
+   ([`docs/SETUP.md`](docs/SETUP.md), section 3b).
+8. Follow `docs/MONITORING.md` (10 minutes) so you learn about downtime from a
    Telegram ping, not from a customer.
 
 Full walkthrough: [`docs/SETUP.md`](docs/SETUP.md).

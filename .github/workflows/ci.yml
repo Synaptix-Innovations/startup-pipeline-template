@@ -34,8 +34,6 @@ jobs:
       - name: Secret scan
         run: bash scripts/secret-scan.sh
 
-      # A real smoke: boot the app and hit /health. If your app can't answer
-      # a health check in CI, it won't answer one in production either.
       # A real smoke: boot the app, hit /health, AND fetch every asset the page
       # references. A 200 from /health only proves the process is up; it does
       # not prove the page works (docs/CASE-STUDIES.md, case 2).
